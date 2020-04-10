@@ -15,5 +15,12 @@
   "bugs": {
     "url": "https://github.com/qwertyforce/webrtc/issues"
   },
-  "homepage": "https://github.com/qwertyforce/webrtc#readme"
+  "homepage": "https://github.com/qwertyforce/webrtc#readme",
+  "dependencies": {
+    "ws": "^7.2.3"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.1",
+    "utf-8-validate": "^5.0.2"
+  }
 }

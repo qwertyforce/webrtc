@@ -1,9 +1,141 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>webrtc chat</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.6.2/simplepeer.min.js" integrity="sha256-9vn6qxm9EyjjiU+0LPB8pD/71TBJpatdAcgA+dyqow8=" crossorigin="anonymous"></script>
+<title></title>
 </head>
 <body>
-
+<ul id="peer_list">
+</ul>
 </body>
+<script type="text/javascript">
+var user_data=localStorage.getItem("user_data");
+var user_id;
+if(user_data){
+user_data=JSON.parse(user_data)
+user_id = user_data.id 
+}else{
+user_id="no_id"
+}
+var reconnect_timeout;
+var socket;
+var interval;
+var p;
+
+var ul = document.getElementById("peer_list");
+ul.addEventListener('click', function(e) {
+  var id=e.target.innerHTML;
+  create_peer(true,id)
+});
+
+function update_peer_list(peer_list){
+ul.innerHTML = '';
+peer_list.forEach((el)=>{
+  let li = document.createElement("li");
+  li.appendChild(document.createTextNode(el));
+  ul.appendChild(li);
+})
+}
+
+function create_peer(initiator,recipient_id) {
+  p = new SimplePeer({
+    initiator: initiator,
+    trickle: false,
+  });
+
+  p.on("error", (err) => console.log("error", err));
+
+  p.on("signal", (data) => {
+  	let msg={type:"signal_msg",
+  	recipient_id:recipient_id,
+  	sender_id:user_id,
+  	data:data
+  }
+    console.log("SIGNAL", JSON.stringify(data));
+
+    socket.send(JSON.stringify(msg))
+  });
+
+  p.on("connect", () => {
+    console.log("CONNECT");
+    p.send("whatever" + Math.random());
+  });
+
+  p.on("data", (data) => {
+    console.log("data: " + data);
+  });
+}
+
+function try_to_recconect() {
+  console.log("trying_to_recconect");
+  clearInterval(interval);
+  socket.close();
+  start_ws();
+}
+function heartbeat() {
+  clearInterval(interval);
+  interval = setInterval(function ping() {
+    console.log("server is not responding");
+    try_to_recconect();
+  }, 5000 + 1000);
+}
+
+function start_ws() {
+  clearTimeout(reconnect_timeout);
+  clearInterval(interval);
+  socket = new WebSocket(`ws://localhost:8080/?user_id=${user_id}`);
+  socket.onopen = function (event) {
+    heartbeat();
+    socket.send("2");
+  };
+  socket.onmessage = function (event) {
+    if (event.data === "1"||event.data === "2") {
+      if(event.data === "1"){
+        socket.send("1");
+      }
+      heartbeat();
+      return;
+    }
+
+    var msg = JSON.parse(event.data);
+    console.log(msg);
+    switch (msg.type) {
+      case "registration":
+        console.log(msg.data)
+        localStorage.setItem("user_data", JSON.stringify(msg.data));
+        break;
+      case "signal_msg":
+      if(p===undefined){
+      	create_peer(false,msg.sender_id)
+      }
+      p.signal(msg.data);
+      break;
+      case "update_peer_list":
+      update_peer_list(msg.data)
+      console.log(msg.data)
+      break;
+    }
+  };
+  socket.onclose = function (event) {
+    clearInterval(interval);
+    if (event.wasClean) {
+      alert("clean close");
+    } else {
+      reconnect_timeout = setTimeout(function () {
+        try_to_recconect()
+      }, 3000);
+      alert("dirty close");
+    }
+    alert(`code ${event.code}`);
+  };
+
+  socket.onerror = function (error) {
+    console.log("Error ");
+    reconnect_timeout = setTimeout(function () {
+      try_to_recconect()
+    }, 3000);
+  };
+}
+start_ws();
+</script>
 </html>
