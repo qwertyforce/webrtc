@@ -7,6 +7,10 @@
 <body>
 <ul id="peer_list">
 </ul>
+<div id="chatbox" style="overflow: scroll;">
+<input type="text" id="chatbox_input"  placeholder="text ">
+<button id="chatbox_button">send</button>
+</div>
 </body>
 <script type="text/javascript">
 var user_data=localStorage.getItem("user_data");
@@ -28,6 +32,22 @@ ul.addEventListener('click', function(e) {
   create_peer(true,id)
 });
 
+var chatbox_input = document.getElementById("chatbox_input");
+var chatbox_button = document.getElementById("chatbox_button");
+chatbox_button.addEventListener('click', function(e) {
+ if(chatbox_input.value!==''){
+  add_message_to_chat_box(chatbox_input.value)
+  chatbox_input.value=''	
+}
+});
+
+function add_message_to_chat_box(msg){
+var chatbox = document.getElementById('chatbox');
+let p = document.createElement("p");
+p.appendChild(document.createTextNode(msg));
+chatbox.insertBefore(p, chatbox.firstChild);
+console.log(msg)
+}
 function update_peer_list(peer_list){
 ul.innerHTML = '';
 peer_list.forEach((el)=>{
@@ -58,7 +78,6 @@ function create_peer(initiator,recipient_id) {
 
   p.on("connect", () => {
     console.log("CONNECT");
-    p.send("whatever" + Math.random());
   });
 
   p.on("data", (data) => {
