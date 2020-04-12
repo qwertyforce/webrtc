@@ -5,13 +5,18 @@
 <title></title>
 </head>
 <body>
-<ul id="peer_list">
+<ul id="peer_list" style="    
+    border: 1px;
+    border-color: black;
+    border-style: solid;">
 </ul>
 <div id="chatbox" style="overflow: scroll;">
 <input type="text" id="chatbox_input"  placeholder="text ">
 <button id="chatbox_button">send</button>
 </div>
 </body>
+
+
 <script type="text/javascript">
 var user_data=localStorage.getItem("user_data");
 var user_id;
@@ -36,7 +41,9 @@ var chatbox_input = document.getElementById("chatbox_input");
 var chatbox_button = document.getElementById("chatbox_button");
 chatbox_button.addEventListener('click', function(e) {
  if(chatbox_input.value!==''){
-  add_message_to_chat_box(chatbox_input.value)
+  let msg={from:user_id,data:chatbox_input.value}
+  p.send(JSON.stringify(msg))
+  add_message_to_chat_box(user_id+":  "+chatbox_input.value)
   chatbox_input.value=''	
 }
 });
@@ -81,7 +88,8 @@ function create_peer(initiator,recipient_id) {
   });
 
   p.on("data", (data) => {
-    console.log("data: " + data);
+    var msg=JSON.parse(data)
+    add_message_to_chat_box(msg.from+':  '+ msg.data)
   });
 }
 
@@ -96,13 +104,13 @@ function heartbeat() {
   interval = setInterval(function ping() {
     console.log("server is not responding");
     try_to_recconect();
-  }, 5000 + 1000);
+  }, 6000 + 1000);
 }
 
 function start_ws() {
   clearTimeout(reconnect_timeout);
   clearInterval(interval);
-  socket = new WebSocket(`ws://localhost:8080/?user_id=${user_id}`);
+  socket = new WebSocket(`ws://localhost:8888/?user_id=${user_id}`);
   socket.onopen = function (event) {
     heartbeat();
     socket.send("2");
